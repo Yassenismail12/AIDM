@@ -1,7 +1,12 @@
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainterPath, QRegion, QFont, QFontDatabase
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QTableWidget, \
+    QTableWidgetItem
+import pandas as pd
+from GoogleDriveAPI import download_google_sheet
+from Sync import setup_auto_sync
+from Main import load_customers_page
 
 class RoundedCornerWindow(QWidget):
     def __init__(self):
@@ -162,6 +167,15 @@ class RoundedCornerWindow(QWidget):
         btn1.clicked.connect(lambda: self.switch_page(self.create_customers_page()))
         btn2.clicked.connect(lambda: self.switch_page(self.create_scripts_page()))
         btn3.clicked.connect(lambda: self.switch_page(self.create_wallet_page()))
+        self.local_file_path = "customers.xlsx"
+        self.sheet_url = "https://docs.google.com/spreadsheets/d/1pEckGy5Tkq1_G-Bc928CVUsl0sowzWi5lvzcICiPPq8/edit?usp=sharing"
+
+        # Download the sheet and set up sync
+        download_google_sheet(self.sheet_url, self.local_file_path)
+        self.sync_timer = setup_auto_sync(self.local_file_path, self.sheet_url)
+
+        # Modify button behavior
+        btn1.clicked.connect(lambda: self.switch_page(load_customers_page(self.local_file_path)))
 
     def load_custom_font(self):
         # Load the custom font
@@ -200,7 +214,6 @@ class RoundedCornerWindow(QWidget):
         label.setStyleSheet("font-size: 24px; font-weight: bold; color: #333;")
         label.setFont(self.custom_font)
         return label
-
     def create_scripts_page(self):
         label = QLabel("Scripts Page")
         label.setAlignment(Qt.AlignCenter)
